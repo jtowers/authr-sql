@@ -521,6 +521,38 @@ Adapter.prototype.isAccountLocked = function (user, callback) {
  * @param {Boolean} isLocked - True if the account is locked, false if not
  */
 
+/**
+ * Checks to see if the user's email address is verified
+ * @param {Object} user - user account to check
+ * @return {Boolean}
+ */
+Adapter.prototype.isEmailVerified = function (user) {
+    var isVerified = user[this.config.user.email_verified];
+    return isVerified;
+};
+
+/**
+ * Save the user's new password once it has been hashed
+ * @param {Object} user - user object to save, including the hashed password
+ * @param {resetPasswordCallback} callback - execute a callback after the attempts are reset
+ */
+Adapter.prototype.resetPassword = function (user, callback) {
+    user[this.config.user.password_reest_token] = null;
+    user[this.config.user.password_reset_token_expiration] = null;
+    user.save().success(function(){
+       callback(null, user);
+    }).error(function(err){
+        throw err;
+    });
+};
+
+/**
+ * Handles response for resetPassword method
+ * @callback resetPasswordCallback
+ * @param {String} err - error message, if any
+ * @param {Object} doc - Returns the number of documents updated
+ */
+
 // UTILITY METHODS
 // ---------------
 

@@ -327,6 +327,16 @@ describe('constructor', function () {
                     });
                 });
             });
+            it('should be able to set a new password', function(done){
+                
+                adapter.isValueTaken(saved_user, adapter.config.user.username, function(err, user){
+                    user[adapter.config.user.password] = 'new_password';
+                    adapter.resetPassword(user, function(err, usr){
+                        usr[adapter.config.user.password].should.equal('new_password');
+                        done();
+                    });
+                })
+            });
 
         });
     });

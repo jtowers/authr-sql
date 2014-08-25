@@ -597,6 +597,32 @@ Adapter.prototype.savePWResetToken = function (user, token, callback) {
  */
 
 
+/**
+ * Verify email address in the datastore
+ * @param {Object} user = object containing user to verify
+ * @param {Callback} callback - Execute a callback when done inserting
+ * @return {verifyEmailAddressCallback} callback
+ */
+Adapter.prototype.verifyEmailAddress = function (user, callback) {
+    user[this.config.user.email_verified] = true;
+    var self = this;
+    
+   user.save().success(function(){
+      callback(null, user);
+   }).error(function(err){
+       throw err;
+   });
+
+};
+
+/**
+ * Handles response for verifyEmailAddress method
+ * @callback verifyEmailAddressCallback
+ * @param {String} err - error message, if it exists
+ * @param {Object} user - user that was deleted
+ */
+
+
 // UTILITY METHODS
 // ---------------
 

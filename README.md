@@ -27,7 +27,7 @@ var config = {
     db: {
         type: 'mysql',
         host: localhost,
-        port: 1337,
+        port: 3306,
         database_name: 'authr',
         collection: 'users'
     }

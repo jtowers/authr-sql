@@ -26,7 +26,7 @@ describe('constructor', function () {
                     email_verification_hash_expires: 'email_verification_expires'
                 },
                 db: {
-                    type: 'mysql',
+                    type: 'sqlite',
                     host: '127.0.0.1',
                     port: '3306',
                     username: 'root',
@@ -75,7 +75,7 @@ describe('constructor', function () {
         
         describe('', function(){
             it('should have the right db config', function (done) {
-        adapter.config.db.type.should.equal('mysql');
+        adapter.config.db.type.should.equal('sqlite');
         done();
     });
 
@@ -308,7 +308,17 @@ describe('constructor', function () {
                         done();
                     });
                 });
-            })
+            });
+
+            it('should be able to verify a user email address', function(done){
+                adapter.isValueTaken(saved_user, adapter.config.user.username, function(err, user){
+                    adapter.verifyEmailAddress(user, function(err, usr){
+                        should.not.exist(err);
+                        usr[adapter.config.user.email_verified].should.equal(true);
+                        done();
+                    });
+                });
+            });
         });
     });
 });

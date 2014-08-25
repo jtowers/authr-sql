@@ -221,8 +221,16 @@ describe('constructor', function () {
                         user.account_locked.should.equal(false);
                         done();
                     });
-                    
                 });
+            });
+            it('should be able to determine if a user\'s account is locked', function(done){
+               adapter.isValueTaken(saved_user, adapter.config.user.username, function(err, user){
+                  adapter.isAccountLocked(user, function(err, isLocked){
+                      should.not.exist(err);
+                      isLocked.should.equal(false);
+                      done();
+                  });
+               });
             });
             it('should be able to build account security', function (done) {
                 var obj = {};

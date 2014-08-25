@@ -375,16 +375,16 @@ Adapter.prototype.emailVerificationExpired = function (user) {
  * @return {Callback}
  */
 Adapter.prototype.failedAttemptsExpired = function (user, callback) {
-  var now = moment();
-    var last_failed_atempt = user[this.config.user.account_last_failed_attempt];
-  var attempts_expire = moment(last_failed_attempt).add(this.config.security.reset_attempts_after_minutes, 'minutes');
-  if(now.isAfter(attempts_expire)) {
-    this.resetFailedLoginAttempts(user, function () {
-      callback(null, true);
-    });
-  } else {
-    return callback(null, false);
-  }
+    var now = moment();
+    var last_failed_attempt = user[this.config.user.account_last_failed_attempt];
+    var attempts_expire = moment(last_failed_attempt).add(this.config.security.reset_attempts_after_minutes, 'minutes');
+    if(now.isAfter(attempts_expire)) {
+        this.resetFailedLoginAttempts(user, function () {
+            callback(null, true);
+        });
+    } else {
+        return callback(null, false);
+    }
 };
 
 /**
@@ -394,6 +394,132 @@ Adapter.prototype.failedAttemptsExpired = function (user, callback) {
  * @param {Boolean} expired - Returns true if the attempts were expired, false if not
  */
 
+
+/**
+ * Looks for user account using password reset token
+ * @param {String} token - reset token to look for
+ * @param {findResetTokenCallback} callback - execute callback when account is found
+ * @return {Callback}
+ */
+Adapter.prototype.findResetToken = function (token, callback) {
+    var self = this;
+    var query = {};
+    query[this.config.user.password_reset_token] = token;
+    this.User.find({where:query}).success(function(user){
+        if(user){
+            callback(null, user);
+        } else {
+            callback(self.config.errmsg.token_not_found);
+        }
+    }).error(function(err){
+        throw err;
+    });
+};
+
+/**
+ * Handles response for findResetToken method
+ * @callback findResetTokenCallback
+ * @param {String} err - error message, if it exists
+ * @param {Object} user - user associated with reset token
+ */
+
+/**
+ * Looks for user account using email verification token
+ * @param {String} token - verification token to look for
+ * @param {findVerificationTokenCallback} callback - execute callback when account is found
+ */
+Adapter.prototype.findVerificationToken = function (token, callback) {
+    var self = this;
+    var query = {};
+    query[this.config.user.email_verification_hash] = token;
+    this.User.find({where:query}).success(function(user){
+        if(user){
+            callback(null, user);
+        } else {
+            callback(self.config.errmsg.token_not_found, null);
+        }
+    }).error(function(err){
+        throw err;
+    });
+};
+
+/**
+ * Handles response for findVerificationToken method
+ * @callback findVerificationTokenCallback
+ * @param {String} err - error message, if it exists
+ * @param {Object} user - user associated with the token
+ */
+
+/**
+ * Hashes a password using a path in a given object as the value
+ * @param {Object} source_object - object to pull the password from
+ * @param {Object} dest_object - object to save the password to
+ * @param {String} path - path to the password field
+ * @param {hashPasswordCallback} callback - return error and/or object with hashed password when finished
+ */
+Adapter.prototype.hashPassword = function (source_object, dest_object, path, callback) {
+    var password = source_object[path];
+    var self = this;
+    bcrypt.genSalt(this.config.security.hash_salt_factor, function (err, salt) {
+        if(err) {
+            return callback(err, null);
+        } else {
+            bcrypt.hash(password, salt, function (err, hash) {
+                if(err) {
+                    return callback(err, null);
+                } else {
+                    dest_object[path] = hash;
+                    return callback(err, dest_object);
+                }
+            });
+        }
+    });
+};
+
+/**
+ * Handles response for hashPassword method
+ * @callback hashPasswordCallback
+ * @param {String} err - error message, if any
+ * @param {Object} dest_object - Returns the object passed to the function with the hashed password in place of the plain-text password
+ */
+
+
+
+/**
+ * Check to see if the account is locked.
+ * First checks to see if there is a lock. If there is, checks to see if the lock has expired.
+ * @param {Object} user - user object to check
+ * @param {isAccountLockedCallback} callback - execute a callback after finished checking lock status
+ */
+Adapter.prototype.isAccountLocked = function (user, callback) {
+    var isLocked = user[this.config.user.account_locked];
+    var unlocked_at;
+    if(isLocked) {
+        unlocked_at = user[this.config.user.account_locked_until];
+        var now = moment();
+        var expires = moment(unlocked_at);
+        if(now.isAfter(expires)) {
+            this.unlockUserAccount(user, function () {
+                return callback(null, false);
+            });
+        } else {
+            return callback({
+                err: this.config.errmsg.account_locked,
+                unlocked_at: unlocked_at
+            });
+        }
+    } else {
+        return callback(null, false);
+    }
+
+};
+
+/**
+ * Handles response for isAccountLocked method
+ * @callback isAccountLockedCallback
+ * @param {String} err - error message, if any
+ * @param {Boolean} isLocked - True if the account is locked, false if not
+ */
 
 // UTILITY METHODS
 // ---------------
@@ -468,26 +594,16 @@ Adapter.prototype.lockUserAccount = function (user, callback) {
     expires = moment().add(this.config.security.lock_account_for_minutes, 'minutes');
     user[this.config.user.account_locked] = true;
     user[this.config.user.account_locked_until] = expires.toDate();
-    var query = {};
     user.save().success(function () {
         errobj = {
             err: errmsg,
             lock_until: expires.toDate()
-        }
+        };
         return callback(errobj, user);
     }).error(function (err) {
         throw err;
     });
 };
-
-/**
- * Reset failed login attempts
- * @function
- * @private
- * @name resetFailedLoginAttempts
- * @param {Object} user - user to reset expired login attempts for
- * @param {Callback} - execute a callback after the attempts are reset
- */
 
 /**
  * Handles response for doEmailVerification method
@@ -515,6 +631,45 @@ Adapter.prototype.generateToken = function (size, callback) {
  * @param {String} err - error message, if it exists
  * @param {Object} obj - generated token
  */
+
+
+/**
+ * Reset failed login attempts
+ * @function
+ * @private
+ * @name resetFailedLoginAttempts
+ * @param {Object} user - user to reset expired login attempts for
+ * @param {Callback} - execute a callback after the attempts are reset
+ */
+Adapter.prototype.resetFailedLoginAttempts = function (user, callback) {
+    user[this.config.user.account_failed_attempts] = 0;
+
+  user.save().success(function() {
+    callback(user);
+  }).error(function(err){
+      throw err;
+  });
+};
+
+/**
+ * Unlock a user's account (e.g., if the lock has expired)
+ * @function
+ * @private
+ * @name unlockUserAccount
+ * @param {Callback} user - user to unlock
+ * @param {Callback} callback - execute a callback after the account is unlocked.
+ */
+Adapter.prototype.unlockUserAccount = function (user, callback) {
+    user[this.config.user.account_locked] = false;
+    user[this.config.user.account_locked_until] = null;
+    
+    user.save().success(function(){
+        return callback(null, user);
+    }).error(function(err){
+        throw err;
+    });
+
+};
 
 /**
  * Saves the user saved in this.signup. Callback returns any errors and the user, if successfully inserted

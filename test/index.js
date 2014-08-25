@@ -212,6 +212,18 @@ describe('constructor', function () {
                     done();
                 });
             });
+            it('should be able to unlock a user\'s account', function (done) {
+                adapter.isValueTaken(saved_user, adapter.config.user.username, function (err, user) {
+                    user.account_locked = true;
+                    user.account_locked_until = moment().toDate();
+                    adapter.unlockUserAccount(user, function (err, user) {
+                        should.not.exist(err);
+                        user.account_locked.should.equal(false);
+                        done();
+                    });
+                    
+                });
+            });
             it('should be able to build account security', function (done) {
                 var obj = {};
                 obj = adapter.buildAccountSecurity(obj);
@@ -227,7 +239,7 @@ describe('constructor', function () {
                     should.not.exist(err);
                     should.exist(obj);
                     done();
-                })
+                });
             });
             it('should give an error when passwords are wrong', function (done) {
                 var user = {
@@ -248,7 +260,7 @@ describe('constructor', function () {
                         adapter.isValueTaken(saved_user, adapter.config.user.username, function (err, user) {
                             should.not.exist(user);
                             done();
-                        })
+                        });
                     });
 
                 });
@@ -272,6 +284,42 @@ describe('constructor', function () {
                     done();
                 });
             });
+
+            it('should be able to expire failed login attempts', function (done) {
+                adapter.isValueTaken(saved_user, adapter.config.user.username, function (err, user) {
+                    user.account_failed_attempts = 5;
+                    user.account_last_failed_attempt = moment().add(-10, 'minutes');
+                    adapter.failedAttemptsExpired(user, function(err, expired){
+                        should.not.exist(err);
+                        user.account_failed_attempts.should.equal(0);
+                        expired.should.equal(true);
+                        done();
+                    });
+                });
+            });
+            it('should be able to hash a new account\'s password', function(done){
+                auser = {
+                    username: 'test@test.com',
+                    password: 'test'
+
+                };
+                adapter.hashPassword(user, user, 'password',function(err, usr){
+                   should.not.exist(err);
+                    usr.password.should.not.equal('test');
+                    done();
+                });
+            });
+            it('should be able to hash an existing user\'s password', function (done) {
+                var password = {password:'test2'};
+                adapter.isValueTaken(saved_user, adapter.config.user.username, function (err, user) {
+                    adapter.hashPassword(password, user, 'password', function(err, user){
+                       should.not.exist(err);
+                        saved_user.password.should.not.equal(user.password);
+                        done();
+                    });
+                });
+            });
+
         });
     });
 });

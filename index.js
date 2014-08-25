@@ -92,12 +92,12 @@ Adapter.prototype.buildUserModel = function (callback) {
             config[this.config.user.password_reset_token] = Sequelize.STRING;
             break;
         case 'password_reset_token_expiration':
-            config[this.config.user.password_reset_token_expiration] = Sequelize.STRING;
+            config[this.config.user.password_reset_token_expiration] = Sequelize.DATE;
             break;
         }
     }
 
-    for(var key in this.config.custom){
+    for(key in this.config.custom){
         var custom = this.config.custom;
         var type = custom[key]['type'];
         switch(type){
@@ -542,6 +542,7 @@ Adapter.prototype.resetPassword = function (user, callback) {
     user.save().success(function(){
        callback(null, user);
     }).error(function(err){
+        console.log(err);
         throw err;
     });
 };
@@ -552,6 +553,22 @@ Adapter.prototype.resetPassword = function (user, callback) {
  * @param {String} err - error message, if any
  * @param {Object} doc - Returns the number of documents updated
  */
+
+/**
+ * Check to see if the password reset token is expired
+ * @param {Object} user - user to pull reset token from for expiration check
+ * @return {Boolean}
+ */
+Adapter.prototype.resetTokenExpired = function (user) {
+    var now = moment();
+    expr = user[this.config.user.password_reset_token_expiration];
+    var expires = moment(expr);
+    if(now.isAfter(expires)) {
+        return true;
+    } else {
+        return false;
+    }
+};
 
 // UTILITY METHODS
 // ---------------

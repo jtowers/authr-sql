@@ -570,6 +570,33 @@ Adapter.prototype.resetTokenExpired = function (user) {
     }
 };
 
+/**
+ * Persist the password reset token to the database.
+ * @param {String} token - the token to save
+ * @param {Callback} callback - the callback to run atfter the token is saved
+ * @return {Callback}
+ */
+Adapter.prototype.savePWResetToken = function (user, token, callback) {
+    var self = this;
+    user[this.config.user.password_reset_token] = token;
+    var hours_to_add = this.config.security.password_reset_token_expiration_hours;
+    token_expiration = moment().add(hours_to_add, 'hours').toDate();
+    user[this.config.user.password_reset_token_expiration] = token_expiration;
+    user.save().success(function(){
+        return callback(null, user);
+    }).error(function(err){
+        throw err;
+    });
+};
+
+/**
+ * Handles response for savePWResetToken method
+ * @callback savePWResetCallback
+ * @param {String} err - error message, if it exists
+ * @param {Object} user - saved user
+ */
+
+
 // UTILITY METHODS
 // ---------------
 

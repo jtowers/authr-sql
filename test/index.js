@@ -298,6 +298,17 @@ describe('constructor', function () {
                     done();
                 });
             });
+            it('should be able to save a password rest token', function(done){
+                adapter.isValueTaken(saved_user, adapter.config.user.username, function(err, user){
+                   var token = 'some_token';
+                    adapter.savePWResetToken(user, token, function(err, usr){
+                        should.not.exist(err);
+                        should.exist(usr);
+                        usr[adapter.config.user.password_reset_token].should.equal(token);
+                        done();
+                    });
+                });
+            })
         });
     });
 });

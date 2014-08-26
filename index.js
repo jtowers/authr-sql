@@ -23,25 +23,25 @@ function Adapter(config, callback) {
     this.db = new Sequelize(config.db.database_name, config.db.username, config.db.password, sqlconfig);
     this.connect(function (err) {
         self.buildUserModel(function () {
-            if(callback){
+            if(callback) {
                 callback();
             }
-            
+
         });
     });
 }
 
 Adapter.prototype.connect = function (callback) {
     this.db.authenticate().complete(function (err) {
-        if(callback){
+        if(callback) {
             callback(err);
         }
     });
 };
 
-Adapter.prototype.disconnect = function(callback){
+Adapter.prototype.disconnect = function (callback) {
     // Just return the callback because sequelize doesn't seem to require a disconnect
-  callback();  
+    callback();
 };
 
 /**
@@ -107,39 +107,39 @@ Adapter.prototype.buildUserModel = function (callback) {
         }
     }
 
-    for(key in this.config.custom){
+    for(key in this.config.custom) {
         var custom = this.config.custom;
         var type = custom[key]['type'];
-        switch(type){
-            case 'string':
-                config[key] = Sequelize.STRING;
-                break;
-            case 'string.binary':
-                config[key] = Sequelize.STRING.BINARY;
-                break;
-            case 'text':
-                config[key] = Sequelize.TEXT;
-                break;
-            case 'integer':
-                config[key] = Sequelize.INTEGER;
-                break;
-            case 'bigint':
-                config[key] = Sequelize.BIGINT;
-                break;
-            case 'float':
-                config[key] = Sequelize.FLOAT;
-                break;
-            case 'decimal':
-                config[key] = Sequelize.DECIMAL;
-                break;
-            case 'date':
-                config[key] = Sequelize.DATE;
-                break;
-            case 'boolean':
-                config[key] = Sequelize.BOOLEAN;
-                break;
-            default:
-                config[key] = Sequelize.STRING;
+        switch(type) {
+        case 'string':
+            config[key] = Sequelize.STRING;
+            break;
+        case 'string.binary':
+            config[key] = Sequelize.STRING.BINARY;
+            break;
+        case 'text':
+            config[key] = Sequelize.TEXT;
+            break;
+        case 'integer':
+            config[key] = Sequelize.INTEGER;
+            break;
+        case 'bigint':
+            config[key] = Sequelize.BIGINT;
+            break;
+        case 'float':
+            config[key] = Sequelize.FLOAT;
+            break;
+        case 'decimal':
+            config[key] = Sequelize.DECIMAL;
+            break;
+        case 'date':
+            config[key] = Sequelize.DATE;
+            break;
+        case 'boolean':
+            config[key] = Sequelize.BOOLEAN;
+            break;
+        default:
+            config[key] = Sequelize.STRING;
         }
     }
     this.User = this.db.define('User', config, {
@@ -176,7 +176,7 @@ Adapter.prototype.buildAccountSecurity = function (obj) {
  * @param {checkCredentialsCallback} callback - Callback to run after finished checking credentials
  */
 Adapter.prototype.checkCredentials = function (obj, callback) {
-    username = obj[this.config.user.username];
+    username = obj[this.config.user.username].toString().toLowerCase();
     password = obj[this.config.user.password];
 
     if(!username || !password) {
@@ -368,14 +368,14 @@ Adapter.prototype.doEmailVerification = function (obj, callback) {
  * @return {Boolean}
  */
 Adapter.prototype.emailVerificationExpired = function (user) {
-  var now = moment();
+    var now = moment();
     expr = user[this.config.user.email_verification_hash_expires];
-  var expires = moment(expr);
-  if(now.isAfter(expires)) {
-    return true;
-  } else {
-    return false;
-  }
+    var expires = moment(expr);
+    if(now.isAfter(expires)) {
+        return true;
+    } else {
+        return false;
+    }
 };
 
 /**
@@ -404,7 +404,6 @@ Adapter.prototype.failedAttemptsExpired = function (user, callback) {
  * @param {Boolean} expired - Returns true if the attempts were expired, false if not
  */
 
-
 /**
  * Looks for user account using password reset token
  * @param {String} token - reset token to look for
@@ -415,13 +414,15 @@ Adapter.prototype.findResetToken = function (token, callback) {
     var self = this;
     var query = {};
     query[this.config.user.password_reset_token] = token;
-    this.User.find({where:query}).success(function(user){
-        if(user){
+    this.User.find({
+        where: query
+    }).success(function (user) {
+        if(user) {
             callback(null, user);
         } else {
             callback(self.config.errmsg.token_not_found);
         }
-    }).error(function(err){
+    }).error(function (err) {
         throw err;
     });
 };
@@ -442,13 +443,15 @@ Adapter.prototype.findVerificationToken = function (token, callback) {
     var self = this;
     var query = {};
     query[this.config.user.email_verification_hash] = token;
-    this.User.find({where:query}).success(function(user){
-        if(user){
+    this.User.find({
+        where: query
+    }).success(function (user) {
+        if(user) {
             callback(null, user);
         } else {
             callback(self.config.errmsg.token_not_found, null);
         }
-    }).error(function(err){
+    }).error(function (err) {
         throw err;
     });
 };
@@ -492,8 +495,6 @@ Adapter.prototype.hashPassword = function (source_object, dest_object, path, cal
  * @param {String} err - error message, if any
  * @param {Object} dest_object - Returns the object passed to the function with the hashed password in place of the plain-text password
  */
-
-
 
 /**
  * Check to see if the account is locked.
@@ -549,9 +550,9 @@ Adapter.prototype.isEmailVerified = function (user) {
 Adapter.prototype.resetPassword = function (user, callback) {
     user[this.config.user.password_reest_token] = null;
     user[this.config.user.password_reset_token_expiration] = null;
-    user.save().success(function(){
-       callback(null, user);
-    }).error(function(err){
+    user.save().success(function () {
+        callback(null, user);
+    }).error(function (err) {
         console.log(err);
         throw err;
     });
@@ -592,9 +593,9 @@ Adapter.prototype.savePWResetToken = function (user, token, callback) {
     var hours_to_add = this.config.security.password_reset_token_expiration_hours;
     token_expiration = moment().add(hours_to_add, 'hours').toDate();
     user[this.config.user.password_reset_token_expiration] = token_expiration;
-    user.save().success(function(){
+    user.save().success(function () {
         return callback(null, user);
-    }).error(function(err){
+    }).error(function (err) {
         throw err;
     });
 };
@@ -606,7 +607,6 @@ Adapter.prototype.savePWResetToken = function (user, token, callback) {
  * @param {Object} user - saved user
  */
 
-
 /**
  * Verify email address in the datastore
  * @param {Object} user = object containing user to verify
@@ -616,12 +616,12 @@ Adapter.prototype.savePWResetToken = function (user, token, callback) {
 Adapter.prototype.verifyEmailAddress = function (user, callback) {
     user[this.config.user.email_verified] = true;
     var self = this;
-    
-   user.save().success(function(){
-      callback(null, user);
-   }).error(function(err){
-       throw err;
-   });
+
+    user.save().success(function () {
+        callback(null, user);
+    }).error(function (err) {
+        throw err;
+    });
 
 };
 
@@ -631,7 +631,6 @@ Adapter.prototype.verifyEmailAddress = function (user, callback) {
  * @param {String} err - error message, if it exists
  * @param {Object} user - user that was deleted
  */
-
 
 // UTILITY METHODS
 // ---------------
@@ -646,9 +645,9 @@ Adapter.prototype.verifyEmailAddress = function (user, callback) {
  */
 Adapter.prototype.resetFailedLoginAttempts = function (user, callback) {
     user[this.config.user.account_failed_attempts] = 0;
-    user.save().success(function(){
+    user.save().success(function () {
         return callback(null, user);
-    }).error(function(err){
+    }).error(function (err) {
         throw err;
     });
 };
@@ -744,7 +743,6 @@ Adapter.prototype.generateToken = function (size, callback) {
  * @param {Object} obj - generated token
  */
 
-
 /**
  * Reset failed login attempts
  * @function
@@ -756,11 +754,11 @@ Adapter.prototype.generateToken = function (size, callback) {
 Adapter.prototype.resetFailedLoginAttempts = function (user, callback) {
     user[this.config.user.account_failed_attempts] = 0;
 
-  user.save().success(function() {
-    callback(user);
-  }).error(function(err){
-      throw err;
-  });
+    user.save().success(function () {
+        callback(user);
+    }).error(function (err) {
+        throw err;
+    });
 };
 
 /**
@@ -774,10 +772,10 @@ Adapter.prototype.resetFailedLoginAttempts = function (user, callback) {
 Adapter.prototype.unlockUserAccount = function (user, callback) {
     user[this.config.user.account_locked] = false;
     user[this.config.user.account_locked_until] = null;
-    
-    user.save().success(function(){
+
+    user.save().success(function () {
         return callback(null, user);
-    }).error(function(err){
+    }).error(function (err) {
         throw err;
     });
 
@@ -791,6 +789,7 @@ Adapter.prototype.unlockUserAccount = function (user, callback) {
  * @return {Callback}
  */
 Adapter.prototype.saveUser = function (user, callback) {
+    user[this.config.user.username] = user[this.config.user.username].toString().toLowerCase();
     var save_me = this.User.build(user);
     save_me.save().success(function (user) {
         callback(null, user.values);

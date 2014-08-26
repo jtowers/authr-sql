@@ -1,6 +1,6 @@
 {
   "name": "authr-sql",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "sql adapter for authr",
   "main": "index.js",
   "scripts": {

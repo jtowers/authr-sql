@@ -34,6 +34,11 @@ Adapter.prototype.connect = function (callback) {
     });
 };
 
+Adapter.prototype.disconnect = function(callback){
+    // Just return the callback because sequelize doesn't seem to require a disconnect
+  callback();  
+};
+
 /**
  * Function used to build user model
  * @function

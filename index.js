@@ -23,14 +23,19 @@ function Adapter(config, callback) {
     this.db = new Sequelize(config.db.database_name, config.db.username, config.db.password, sqlconfig);
     this.connect(function (err) {
         self.buildUserModel(function () {
-            callback();
+            if(callback){
+                callback();
+            }
+            
         });
     });
 }
 
 Adapter.prototype.connect = function (callback) {
     this.db.authenticate().complete(function (err) {
-        callback(err);
+        if(callback){
+            callback(err);
+        }
     });
 };
 
